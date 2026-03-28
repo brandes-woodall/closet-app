@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Closet</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #f5f0eb;
+    --card-bg: #ffffff;
+    --text: #2c2420;
+    --text-light: #7a6e65;
+    --accent: #8b6f5e;
+    --accent-light: #c4a98e;
+    --border: #e0d5cc;
+    --hover: #f9f5f1;
+    --tag-bg: #f0e8e0;
+    --shadow: 0 1px 3px rgba(44,36,32,0.06), 0 4px 12px rgba(44,36,32,0.04);
+    --shadow-hover: 0 2px 8px rgba(44,36,32,0.1), 0 8px 24px rgba(44,36,32,0.06);
+    --radius: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header {
+    background: var(--card-bg); border-bottom: 1px solid var(--border);
+    padding: 16px 40px; display: flex; align-items: center;
+    justify-content: space-between; position: sticky; top: 0; z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 24px; }
+  header h1 { font-family: 'EB Garamond', serif; font-size: 26px; font-weight: 500; letter-spacing: 0.5px; }
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab {
+    padding: 7px 18px; border: 1px solid var(--border); border-radius: 8px;
+    background: transparent; font-family: 'Inter', sans-serif; font-size: 13px;
+    font-weight: 500; color: var(--text-light); cursor: pointer; transition: all 0.2s;
+  }
+  .nav-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+  .nav-tab:hover:not(.active) { background: var(--hover); }
+  .header-right { display: flex; align-items: center; gap: 20px; font-size: 13px; color: var(--text-light); }
+  .header-right span strong { color: var(--text); font-weight: 600; }
+  .sync-btn {
+    padding: 6px 16px; background: var(--accent); color: white; border: none;
+    border-radius: 8px; cursor: pointer; font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 500; transition: background 0.2s;
+  }
+  .sync-btn:hover { background: #725a4b; }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px 40px; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .filters-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
+  .search-box {
+    flex: 1; min-width: 200px; padding: 9px 14px; border: 1px solid var(--border);
+    border-radius: var(--radius); font-size: 13px; font-family: 'Inter', sans-serif;
+    background: var(--card-bg); outline: none; transition: border-color 0.2s;
+  }
+  .search-box:focus { border-color: var(--accent); }
+  .filter-select {
+    padding: 9px 30px 9px 12px; border: 1px solid var(--border); border-radius: var(--radius);
+    font-size: 12px; font-family: 'Inter', sans-serif; background: var(--card-bg); color: var(--text);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237a6e65' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center; cursor: pointer; outline: none;
+  }
+  .view-toggle { display: flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .view-btn {
+    padding: 8px 12px; border: none; background: var(--card-bg); cursor: pointer;
+    font-size: 13px; color: var(--text-light); transition: all 0.2s;
+  }
+  .view-btn.active { background: var(--accent); color: white; }
+  .view-btn:not(:last-child) { border-right: 1px solid var(--border); }
+
+  .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+  .item-card {
+    background: var(--card-bg); border-radius: 8px; border: 1px solid var(--border);
+    overflow: hidden; transition: box-shadow 0.25s, transform 0.25s; cursor: pointer; position: relative;
+  }
+  .item-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+  .item-image {
+    width: 100%; aspect-ratio: 1/1; background: var(--tag-bg);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; position: relative;
+  }
+  .item-image img { width: 100%; height: 100%; object-fit: contain; padding: 8px; }
+  .item-image .placeholder-icon { font-size: 28px; opacity: 0.3; }
+  .image-upload-overlay {
+    position: absolute; inset: 0; background: rgba(44,36,32,0.5);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.2s; cursor: pointer;
+  }
+  .item-image:hover .image-upload-overlay { opacity: 1; }
+  .image-upload-overlay span {
+    color: white; font-size: 11px; font-weight: 500; padding: 6px 12px;
+    background: rgba(255,255,255,0.2); border-radius: 6px; backdrop-filter: blur(4px);
+  }
+  .item-info { padding: 10px 12px; }
+  .item-brand {
+    font-size: 9px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--accent); margin-bottom: 2px;
+  }
+  .item-name {
+    font-family: 'EB Garamond', serif; font-size: 14px; font-weight: 500;
+    margin-bottom: 6px; line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .item-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tag {
+    font-size: 10px; padding: 2px 8px; background: var(--tag-bg);
+    border-radius: 20px; color: var(--text-light); white-space: nowrap;
+  }
+  .tag.colorway { display: flex; align-items: center; gap: 4px; }
+  .color-dot { width: 7px; height: 7px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; }
+
+  .items-list { display: flex; flex-direction: column; gap: 3px; }
+  .list-header, .list-item {
+    display: grid; grid-template-columns: 50px 1.2fr 1.5fr 1fr 0.5fr 0.7fr 0.7fr 40px;
+    align-items: center; padding: 8px 14px; gap: 10px; font-size: 12px;
+  }
+  .list-header {
+    font-weight: 600; font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--text-light); border-bottom: 1px solid var(--border); padding-bottom: 10px;
+  }
+  .list-item {
+    background: var(--card-bg); border-radius: 6px; border: 1px solid var(--border); transition: box-shadow 0.2s;
+  }
+  .list-item:hover { box-shadow: var(--shadow); }
+  .list-thumb {
+    width: 38px; height: 38px; border-radius: 5px; background: var(--tag-bg);
+    overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .list-thumb img { width: 100%; height: 100%; object-fit: contain; }
+  .list-thumb .placeholder-icon { font-size: 14px; opacity: 0.3; }
+  .list-brand { font-weight: 500; }
+  .list-item-name { color: var(--text-light); }
+  .list-link { display: flex; align-items: center; justify-content: center; }
+  .list-link a { color: var(--accent); text-decoration: none; font-size: 14px; opacity: 0.6; transition: opacity 0.2s; }
+  .list-link a:hover { opacity: 1; }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(44,36,32,0.4); backdrop-filter: blur(4px);
+    z-index: 200; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--card-bg); border-radius: 14px; width: 90%; max-width: 560px;
+    max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    transform: translateY(20px); transition: transform 0.25s; position: relative;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-image {
+    width: 100%; aspect-ratio: 1/1; background: var(--tag-bg);
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden; cursor: pointer; border-radius: 14px 14px 0 0;
+  }
+  .modal-image img { width: 100%; height: 100%; object-fit: contain; padding: 16px; }
+  .modal-image .placeholder-icon { font-size: 48px; opacity: 0.2; }
+  .modal-image-hint {
+    position: absolute; bottom: 12px; right: 12px; font-size: 11px; color: white;
+    background: rgba(0,0,0,0.4); padding: 4px 10px; border-radius: 6px; backdrop-filter: blur(4px);
+  }
+  .modal-body { padding: 24px; }
+  .modal-brand { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.2px; color: var(--accent); margin-bottom: 4px; }
+  .modal-name { font-family: 'EB Garamond', serif; font-size: 24px; font-weight: 500; margin-bottom: 18px; line-height: 1.25; }
+  .modal-details { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .detail-item label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-light); display: block; margin-bottom: 3px; }
+  .detail-item span { font-size: 14px; }
+  .modal-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .modal-link {
+    display: inline-block; padding: 9px 18px; background: var(--accent); color: white;
+    text-decoration: none; border-radius: 8px; font-size: 12px; font-weight: 500; transition: background 0.2s;
+  }
+  .modal-link:hover { background: #725a4b; }
+  .modal-close {
+    position: absolute; top: 12px; right: 12px; width: 32px; height: 32px;
+    border-radius: 50%; border: none; background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(4px); font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; color: var(--text); z-index: 10;
+  }
+  .modal-close:hover { background: white; }
+  .modal-looks { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); }
+  .modal-looks h4 { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-light); margin-bottom: 10px; }
+  .modal-looks-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+  .modal-look-card {
+    width: 120px; padding: 8px; background: var(--tag-bg); border-radius: 8px;
+    cursor: pointer; transition: box-shadow 0.2s; text-align: center;
+  }
+  .modal-look-card:hover { box-shadow: var(--shadow); }
+  .modal-look-thumbs { display: flex; gap: 3px; justify-content: center; margin-bottom: 6px; flex-wrap: wrap; }
+  .modal-look-thumbs img { width: 28px; height: 28px; border-radius: 4px; object-fit: contain; background: var(--card-bg); border: 1px solid var(--border); }
+  .modal-look-thumbs .mini-placeholder {
+    width: 28px; height: 28px; border-radius: 4px; background: var(--card-bg);
+    border: 1px solid var(--border); display: flex; align-items: center;
+    justify-content: center; font-size: 10px; opacity: 0.4;
+  }
+  .modal-look-name { font-size: 11px; font-weight: 500; color: var(--text); }
+
+  .lookbook-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .lookbook-header h2 { font-family: 'EB Garamond', serif; font-size: 22px; font-weight: 500; }
+  .new-look-btn {
+    padding: 9px 20px; background: var(--accent); color: white; border: none;
+    border-radius: 8px; cursor: pointer; font-family: 'Inter', sans-serif;
+    font-size: 13px; font-weight: 500; transition: background 0.2s;
+  }
+  .new-look-btn:hover { background: #725a4b; }
+  .looks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+  .look-card { background: var(--card-bg); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; transition: box-shadow 0.2s; }
+  .look-card:hover { box-shadow: var(--shadow-hover); }
+  .look-card-header {
+    padding: 14px 16px; display: flex; align-items: center;
+    justify-content: space-between; border-bottom: 1px solid var(--border);
+  }
+  .look-card-header input {
+    font-family: 'EB Garamond', serif; font-size: 18px; font-weight: 500;
+    border: none; outline: none; background: transparent; color: var(--text); width: 100%;
+  }
+  .look-card-header input::placeholder { color: var(--accent-light); }
+  .look-card-actions { display: flex; gap: 6px; flex-shrink: 0; margin-left: 10px; }
+  .look-action-btn {
+    width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--card-bg); cursor: pointer; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-light); transition: all 0.2s;
+  }
+  .look-action-btn:hover { background: var(--hover); color: var(--text); }
+  .look-action-btn.delete:hover { background: #f5e0e0; color: #a04040; border-color: #dca0a0; }
+  .look-drop-zone {
+    min-height: 140px; padding: 16px; display: flex; flex-wrap: wrap;
+    gap: 10px; align-items: flex-start; position: relative;
+  }
+  .look-drop-zone.drag-over { background: #f0ebe5; }
+  .look-drop-hint {
+    position: absolute; inset: 0; display: flex; align-items: center;
+    justify-content: center; color: var(--accent-light); font-size: 13px; pointer-events: none;
+  }
+  .look-item-thumb { width: 80px; position: relative; cursor: pointer; }
+  .look-item-thumb img {
+    width: 80px; height: 80px; border-radius: 6px; object-fit: contain;
+    background: var(--tag-bg); border: 1px solid var(--border);
+  }
+  .look-item-thumb .look-placeholder {
+    width: 80px; height: 80px; border-radius: 6px; background: var(--tag-bg);
+    border: 1px solid var(--border); display: flex; align-items: center;
+    justify-content: center; font-size: 24px; opacity: 0.3;
+  }
+  .look-item-label {
+    font-size: 9px; text-align: center; margin-top: 4px; color: var(--text-light); line-height: 1.2;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .look-item-remove {
+    position: absolute; top: -4px; right: -4px; width: 18px; height: 18px;
+    border-radius: 50%; border: none; background: rgba(160,64,64,0.85);
+    color: white; font-size: 10px; cursor: pointer;
+    display: none; align-items: center; justify-content: center;
+  }
+  .look-item-thumb:hover .look-item-remove { display: flex; }
+
+  .lookbook-layout { display: flex; gap: 24px; }
+  .lookbook-main { flex: 1; min-width: 0; }
+  .lookbook-sidebar {
+    width: 220px; flex-shrink: 0; position: sticky; top: 80px; align-self: flex-start;
+    max-height: calc(100vh - 120px); overflow-y: auto;
+    background: var(--card-bg); border-radius: var(--radius);
+    border: 1px solid var(--border); padding: 12px;
+  }
+  .sidebar-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-light); margin-bottom: 8px; }
+  .sidebar-search {
+    width: 100%; padding: 7px 10px; border: 1px solid var(--border);
+    border-radius: 6px; font-size: 11px; font-family: 'Inter', sans-serif;
+    margin-bottom: 8px; outline: none;
+  }
+  .sidebar-search:focus { border-color: var(--accent); }
+  .sidebar-items { display: flex; flex-direction: column; gap: 4px; }
+  .sidebar-item {
+    display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+    border-radius: 6px; cursor: grab; transition: background 0.15s; border: 1px solid transparent;
+  }
+  .sidebar-item:hover { background: var(--hover); }
+  .sidebar-item:active { cursor: grabbing; }
+  .sidebar-item-thumb {
+    width: 32px; height: 32px; border-radius: 4px; background: var(--tag-bg);
+    overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .sidebar-item-thumb img { width: 100%; height: 100%; object-fit: contain; }
+  .sidebar-item-thumb .placeholder-icon { font-size: 12px; opacity: 0.3; }
+  .sidebar-item-info { min-width: 0; }
+  .sidebar-item-brand { font-size: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent); }
+  .sidebar-item-name { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-light); }
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+  .empty-state p { font-size: 14px; }
+
+  .delete-image-btn {
+    position: absolute; top: 6px; left: 6px; width: 22px; height: 22px;
+    border-radius: 50%; border: none; background: rgba(180,60,60,0.85);
+    color: white; font-size: 12px; cursor: pointer;
+    display: none; align-items: center; justify-content: center; z-index: 5;
+  }
+  .item-image:hover .delete-image-btn { display: flex; }
+  .hidden-input { display: none; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.05); }
+  }
+
+  /* Saving indicator */
+  .save-indicator {
+    position: fixed; bottom: 20px; right: 20px; padding: 8px 16px;
+    background: var(--accent); color: white; border-radius: 8px;
+    font-size: 12px; font-weight: 500; opacity: 0; transition: opacity 0.3s;
+    pointer-events: none; z-index: 300;
+  }
+  .save-indicator.show { opacity: 1; }
+
+  @media (max-width: 768px) {
+    header { padding: 12px 16px; flex-direction: column; gap: 10px; }
+    .container { padding: 16px; }
+    .items-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+    .lookbook-layout { flex-direction: column-reverse; }
+    .lookbook-sidebar { width: 100%; position: static; max-height: 300px; }
+    .modal { width: 95%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>My Closet</h1>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchPage('closet')">Closet</button>
+      <button class="nav-tab" onclick="switchPage('lookbook')">Lookbook</button>
+    </div>
+  </div>
+  <div class="header-right">
+    <span><strong id="total-count">0</strong> items</span>
+    <span><strong id="brand-count">0</strong> brands</span>
+    <button class="sync-btn" id="refresh-btn" onclick="refreshData()">Sync</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="page active" id="page-closet">
+    <div class="filters-bar">
+      <input class="search-box" type="text" id="search" placeholder="Search items, brands, colors..." />
+      <select class="filter-select" id="filter-type"><option value="">All Types</option></select>
+      <select class="filter-select" id="filter-brand"><option value="">All Brands</option></select>
+      <select class="filter-select" id="filter-subcategory"><option value="">All Subcategories</option></select>
+      <div class="view-toggle">
+        <button class="view-btn active" data-view="grid" title="Grid">&#9638;</button>
+        <button class="view-btn" data-view="list" title="List">&#9776;</button>
+      </div>
+    </div>
+    <div id="items-container"></div>
+  </div>
+
+  <div class="page" id="page-lookbook">
+    <div class="lookbook-header">
+      <h2>My Looks</h2>
+      <button class="new-look-btn" onclick="createNewLook()">+ New Look</button>
+    </div>
+    <div class="lookbook-layout">
+      <div class="lookbook-main" id="looks-container"></div>
+      <div class="lookbook-sidebar">
+        <div class="sidebar-title">Drag items into looks</div>
+        <input class="sidebar-search" id="sidebar-search" type="text" placeholder="Search..." />
+        <div class="sidebar-items" id="sidebar-items"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal()">&times;</button>
+    <div class="modal-image" id="modal-image" onclick="uploadImageForItem(currentModalItemId)">
+      <span class="placeholder-icon" id="modal-placeholder">&#128090;</span>
+      <img id="modal-img" style="display:none" />
+      <div class="modal-image-hint">Click to upload image</div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-brand" id="modal-brand"></div>
+      <div class="modal-name" id="modal-name"></div>
+      <div class="modal-details">
+        <div class="detail-item"><label>Colorway</label><span id="modal-colorway"></span></div>
+        <div class="detail-item"><label>Size</label><span id="modal-size"></span></div>
+        <div class="detail-item"><label>Type</label><span id="modal-type"></span></div>
+        <div class="detail-item"><label>Subcategory</label><span id="modal-subcategory"></span></div>
+      </div>
+      <div class="modal-actions">
+        <a class="modal-link" id="modal-link" href="#" target="_blank">View Product &rarr;</a>
+      </div>
+      <div class="modal-looks" id="modal-looks" style="display:none">
+        <h4>Appears in looks</h4>
+        <div class="modal-looks-grid" id="modal-looks-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<input type="file" accept="image/*" class="hidden-input" id="file-input" />
+<div class="save-indicator" id="save-indicator">Saved</div>
+
+<script>
+const SHEET_ID = '1Yr8AKKEnrz2r_DGut_Mi40P17U_75uqEyhSWp9che1o';
+const API_KEY = 'AIzaSyBHBEBVqSlTJsQxU_B8bHNqogwvKuX5dpU';
+const SHEET_RANGE = 'Sheet1';
+
+let closetData = [];
+let currentView = 'grid';
+let currentPage = 'closet';
+let currentModalItemId = null;
+const itemImages = {};
+let looks = [];
+
+const typeIcons = {
+  'Shoes': '&#128094;', 'Bags': '&#128092;', 'Sweater': '&#129507;',
+  'Top': '&#128085;', 'Tops': '&#128085;', 'Pants': '&#128086;',
+  'Skirts': '&#128089;', 'Jackets': '&#129509;', 'Swimwear': '&#128089;',
+};
+const colorMap = {
+  'sand':'#c2b280','rust':'#b7410e','benson':'#5c4033','cognac':'#9a463d',
+  'cream':'#fffdd0','brown':'#7b3f00','ivory':'#fffff0','white':'#ffffff',
+  'dark purple':'#4a0040','wintergarden':'#5e8c61','mink':'#4b3621',
+  'black':'#1a1a1a','chocolate':'#3c1a0e','dark olive':'#3c341f',
+  'salt':'#f5f0eb','deep crimson':'#860029','shell':'#fff1e8',
+  'blush':'#de5d83','dark navy':'#000033','caffe':'#5c3d2e',
+  'heather grey':'#b0a8a0','icy blue':'#d6ecef','rose':'#ff007f',
+  'straw':'#e4d96f','camel':'#c09060','glossy black':'#1c1c1c',
+  'gold':'#ffd700','green':'#2e8b57','navy':'#001f3f',
+  'dark grey':'#555555','dusty rose':'#c4767a','almond':'#efdecd',
+  'stone':'#928e85','camel brown':'#a0764a','racing green':'#004225',
+  'mahogany':'#4e2728','dune':'#c8b99a','habano':'#a37b5e',
+  'finale':'#6b5b73','yarra':'#7e8b70','moonstone':'#c4c8cc','trenton':'#697280',
+};
+function getColorHex(c) {
+  const l = c.toLowerCase();
+  for (const [k,v] of Object.entries(colorMap)) { if (l.includes(k)) return v; }
+  return '#ccc';
+}
+
+function showSaved() {
+  const el = document.getElementById('save-indicator');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 1500);
+}
+
+// ===== API HELPERS =====
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(path, opts);
+  return res.json();
+}
+
+// ===== FETCH SHEET DATA =====
+async function fetchSheetData() {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_RANGE}?key=${API_KEY}`;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    const data = await response.json();
+    const rows = data.values;
+    if (!rows || rows.length < 2) throw new Error('No data found');
+    let hi = rows.findIndex(r => r.some(c => c.toLowerCase().trim() === 'brand'));
+    if (hi === -1) hi = 1;
+    const h = rows[hi].map(x => x.trim().toLowerCase());
+    const cols = { brand: h.indexOf('brand'), item: h.indexOf('item'), colorway: h.indexOf('colorway'),
+      size: h.indexOf('size'), type: h.indexOf('type'), subcategory: h.indexOf('subcategory'), link: h.indexOf('link') };
+    closetData = [];
+    for (let i = hi + 1; i < rows.length; i++) {
+      const r = rows[i]; const brand = (r[cols.brand]||'').trim();
+      if (!brand) continue;
+      closetData.push({ id: closetData.length + 1, brand, item: (r[cols.item]||'').trim(),
+        colorway: (r[cols.colorway]||'').trim(), size: (r[cols.size]||'').trim(),
+        type: (r[cols.type]||'').trim(), subcategory: (r[cols.subcategory]||'').trim(),
+        link: (r[cols.link]||'').trim() });
+    }
+    return true;
+  } catch (err) {
+    console.error(err);
+    document.getElementById('items-container').innerHTML =
+      `<div class="empty-state"><div class="icon">&#9888;</div><p>Could not load from Google Sheets</p>
+       <p style="font-size:12px;margin-top:6px;color:#a08070;">${err.message}</p>
+       <button onclick="location.reload()" style="margin-top:12px;padding:8px 18px;background:var(--accent);color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;">Retry</button></div>`;
+    return false;
+  }
+}
+
+// ===== LOAD PERSISTED DATA =====
+async function loadImages() {
+  const imgs = await api('GET', '/api/images');
+  Object.assign(itemImages, imgs);
+}
+
+async function loadLooks() {
+  looks = await api('GET', '/api/looks');
+}
+
+async function refreshData() {
+  const btn = document.getElementById('refresh-btn');
+  btn.textContent = 'Syncing...'; btn.disabled = true;
+  const ok = await fetchSheetData();
+  if (ok) { populateFilters(); render(); renderSidebar(); }
+  btn.textContent = 'Sync'; btn.disabled = false;
+}
+
+// ===== PAGE NAV =====
+function switchPage(page) {
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.nav-tab[onclick*="${page}"]`).classList.add('active');
+  if (page === 'lookbook') { renderLooks(); renderSidebar(); }
+}
+
+// ===== FILTERS =====
+function populateFilters() {
+  const types = [...new Set(closetData.map(d => d.type))].sort();
+  const brands = [...new Set(closetData.map(d => d.brand))].sort();
+  const ts = document.getElementById('filter-type'); const pt = ts.value;
+  ts.innerHTML = '<option value="">All Types</option>';
+  types.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; ts.appendChild(o); });
+  ts.value = pt;
+  const bs = document.getElementById('filter-brand'); const pb = bs.value;
+  bs.innerHTML = '<option value="">All Brands</option>';
+  brands.forEach(b => { const o = document.createElement('option'); o.value = b; o.textContent = b; bs.appendChild(o); });
+  bs.value = pb;
+  updateSubcategoryFilter();
+}
+
+function updateSubcategoryFilter() {
+  const selType = document.getElementById('filter-type').value;
+  const items = selType ? closetData.filter(d => d.type === selType) : closetData;
+  const subs = [...new Set(items.map(d => d.subcategory).filter(s => s && s !== '-' && s !== ''))].sort();
+  const ss = document.getElementById('filter-subcategory'); const ps = ss.value;
+  ss.innerHTML = '<option value="">All Subcategories</option>';
+  subs.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; ss.appendChild(o); });
+  ss.value = subs.includes(ps) ? ps : '';
+}
+
+function getFilteredItems() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const type = document.getElementById('filter-type').value;
+  const brand = document.getElementById('filter-brand').value;
+  const sub = document.getElementById('filter-subcategory').value;
+  return closetData.filter(i => {
+    if (type && i.type !== type) return false;
+    if (brand && i.brand !== brand) return false;
+    if (sub && i.subcategory !== sub) return false;
+    if (q && !`${i.brand} ${i.item} ${i.colorway} ${i.type} ${i.subcategory}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function updateStats() {
+  const items = getFilteredItems();
+  document.getElementById('total-count').textContent = items.length;
+  document.getElementById('brand-count').textContent = new Set(items.map(i => i.brand)).size;
+}
+
+// ===== CLOSET RENDER =====
+function render() {
+  const items = getFilteredItems(); const c = document.getElementById('items-container');
+  if (!items.length) { c.innerHTML = '<div class="empty-state"><div class="icon">&#128090;</div><p>No items match your filters</p></div>'; updateStats(); return; }
+  if (currentView === 'grid') {
+    c.innerHTML = '<div class="items-grid">' + items.map(renderGridCard).join('') + '</div>';
+  } else {
+    c.innerHTML = '<div class="items-list"><div class="list-header"><div></div><div>Brand</div><div>Item</div><div>Colorway</div><div>Size</div><div>Type</div><div>Subcategory</div><div></div></div>' + items.map(renderListRow).join('') + '</div>';
+  }
+  updateStats();
+}
+
+function renderGridCard(item) {
+  const icon = typeIcons[item.type] || '&#128090;';
+  const img = itemImages[item.id]
+    ? `<img src="${itemImages[item.id]}" /><button class="delete-image-btn" onclick="event.stopPropagation();deleteImage(${item.id})">&times;</button>`
+    : `<span class="placeholder-icon">${icon}</span>`;
+  return `<div class="item-card" onclick="openModal(${item.id})"><div class="item-image">${img}<div class="image-upload-overlay" onclick="event.stopPropagation();uploadImageForItem(${item.id})"><span>${itemImages[item.id]?'Change':'Add image'}</span></div></div><div class="item-info"><div class="item-brand">${item.brand}</div><div class="item-name">${item.item}</div><div class="item-tags"><span class="tag colorway"><span class="color-dot" style="background:${getColorHex(item.colorway)}"></span>${item.colorway}</span><span class="tag">${item.size||'—'}</span></div></div></div>`;
+}
+
+function renderListRow(item) {
+  const icon = typeIcons[item.type] || '&#128090;';
+  const t = itemImages[item.id] ? `<img src="${itemImages[item.id]}" />` : `<span class="placeholder-icon">${icon}</span>`;
+  return `<div class="list-item" onclick="openModal(${item.id})"><div class="list-thumb" onclick="event.stopPropagation();uploadImageForItem(${item.id})">${t}</div><div class="list-brand">${item.brand}</div><div class="list-item-name">${item.item}</div><div><span class="tag colorway"><span class="color-dot" style="background:${getColorHex(item.colorway)}"></span>${item.colorway}</span></div><div>${item.size||'—'}</div><div>${item.type}</div><div>${item.subcategory&&item.subcategory!=='-'?item.subcategory:'—'}</div><div class="list-link">${item.link?`<a href="${item.link}" target="_blank" onclick="event.stopPropagation()">&#8599;</a>`:''}</div></div>`;
+}
+
+// ===== MODAL =====
+function openModal(id) {
+  const item = closetData.find(i => i.id === id); if (!item) return;
+  currentModalItemId = id;
+  document.getElementById('modal-brand').textContent = item.brand;
+  document.getElementById('modal-name').textContent = item.item;
+  document.getElementById('modal-colorway').textContent = item.colorway;
+  document.getElementById('modal-size').textContent = item.size || '—';
+  document.getElementById('modal-type').textContent = item.type;
+  document.getElementById('modal-subcategory').textContent = (item.subcategory && item.subcategory !== '-') ? item.subcategory : '—';
+  const ml = document.getElementById('modal-link');
+  if (item.link) { ml.href = item.link; ml.style.display = 'inline-block'; } else { ml.style.display = 'none'; }
+  const mi = document.getElementById('modal-img'), mp = document.getElementById('modal-placeholder');
+  if (itemImages[id]) { mi.src = itemImages[id]; mi.style.display = 'block'; mp.style.display = 'none'; }
+  else { mi.style.display = 'none'; mp.style.display = 'block'; mp.innerHTML = typeIcons[item.type] || '&#128090;'; }
+
+  const itemLooks = looks.filter(l => l.itemIds.includes(id));
+  const ls = document.getElementById('modal-looks'), lg = document.getElementById('modal-looks-grid');
+  if (itemLooks.length) {
+    ls.style.display = 'block';
+    lg.innerHTML = itemLooks.map(look => {
+      const thumbs = look.itemIds.slice(0,4).map(iid => {
+        if (itemImages[iid]) return `<img src="${itemImages[iid]}" />`;
+        const it = closetData.find(x => x.id === iid);
+        return `<div class="mini-placeholder">${typeIcons[it?.type]||'&#128090;'}</div>`;
+      }).join('');
+      return `<div class="modal-look-card" onclick="closeModal();switchPage('lookbook');"><div class="modal-look-thumbs">${thumbs}</div><div class="modal-look-name">${look.name||'Untitled Look'}</div></div>`;
+    }).join('');
+  } else { ls.style.display = 'none'; }
+
+  document.getElementById('modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.body.style.overflow = ''; currentModalItemId = null;
+}
+
+// ===== IMAGE UPLOAD (persisted) =====
+let pendingImageItemId = null;
+function uploadImageForItem(id) { pendingImageItemId = id; document.getElementById('file-input').click(); }
+
+async function deleteImage(id) {
+  delete itemImages[id];
+  await api('DELETE', `/api/images/${id}`);
+  render(); renderSidebar(); renderLooks(); showSaved();
+  if (currentModalItemId === id) openModal(id);
+}
+
+document.getElementById('file-input').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file || !pendingImageItemId) return;
+  const reader = new FileReader();
+  reader.onload = async function(ev) {
+    const id = pendingImageItemId;
+    itemImages[id] = ev.target.result;
+    render(); renderSidebar(); renderLooks();
+    if (currentModalItemId === id) openModal(id);
+    // Persist to server
+    await api('POST', `/api/images/${id}`, { imageData: ev.target.result });
+    showSaved();
+    pendingImageItemId = null;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+});
+
+// ===== LOOKBOOK (persisted) =====
+async function createNewLook() {
+  const look = await api('POST', '/api/looks', { name: '' });
+  looks.unshift(look);
+  renderLooks();
+}
+
+async function deleteLook(lookId) {
+  await api('DELETE', `/api/looks/${lookId}`);
+  looks = looks.filter(l => l.id !== lookId);
+  renderLooks();
+}
+
+let renameTimeout = null;
+function renameLook(lookId, name) {
+  const look = looks.find(l => l.id === lookId);
+  if (look) look.name = name;
+  clearTimeout(renameTimeout);
+  renameTimeout = setTimeout(async () => {
+    await api('PATCH', `/api/looks/${lookId}`, { name });
+    showSaved();
+  }, 500);
+}
+
+async function removeItemFromLook(lookId, itemId) {
+  const look = looks.find(l => l.id === lookId);
+  if (look) { look.itemIds = look.itemIds.filter(id => id !== itemId); renderLooks(); }
+  await api('DELETE', `/api/looks/${lookId}/items/${itemId}`);
+  showSaved();
+}
+
+function renderLooks() {
+  const c = document.getElementById('looks-container');
+  if (!looks.length) {
+    c.innerHTML = '<div class="empty-state"><div class="icon">&#128087;</div><p>No looks yet — create one to start styling!</p></div>'; return;
+  }
+  c.innerHTML = '<div class="looks-grid">' + looks.map(look => {
+    const items = look.itemIds.map(iid => {
+      const item = closetData.find(x => x.id === iid); if (!item) return '';
+      const icon = typeIcons[item.type] || '&#128090;';
+      const thumb = itemImages[iid] ? `<img src="${itemImages[iid]}" />` : `<div class="look-placeholder">${icon}</div>`;
+      return `<div class="look-item-thumb" onclick="openModal(${iid})">${thumb}<button class="look-item-remove" onclick="event.stopPropagation();removeItemFromLook(${look.id},${iid})">&times;</button><div class="look-item-label">${item.brand}<br>${item.item}</div></div>`;
+    }).join('');
+    const hint = look.itemIds.length ? '' : '<div class="look-drop-hint">Drag items here from the sidebar</div>';
+    return `<div class="look-card"><div class="look-card-header"><input type="text" value="${look.name}" placeholder="Name this look..." onchange="renameLook(${look.id},this.value)" /><div class="look-card-actions"><button class="look-action-btn delete" onclick="deleteLook(${look.id})">&times;</button></div></div><div class="look-drop-zone" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event,${look.id})">${items}${hint}</div></div>`;
+  }).join('') + '</div>';
+}
+
+function renderSidebar() {
+  const q = (document.getElementById('sidebar-search')?.value || '').toLowerCase();
+  const items = closetData.filter(i => !q || `${i.brand} ${i.item} ${i.colorway} ${i.type}`.toLowerCase().includes(q));
+  document.getElementById('sidebar-items').innerHTML = items.map(item => {
+    const icon = typeIcons[item.type] || '&#128090;';
+    const thumb = itemImages[item.id] ? `<img src="${itemImages[item.id]}" />` : `<span class="placeholder-icon">${icon}</span>`;
+    return `<div class="sidebar-item" draggable="true" ondragstart="handleDragStart(event,${item.id})"><div class="sidebar-item-thumb">${thumb}</div><div class="sidebar-item-info"><div class="sidebar-item-brand">${item.brand}</div><div class="sidebar-item-name">${item.item}</div></div></div>`;
+  }).join('');
+}
+
+let dragItemId = null;
+function handleDragStart(e, id) { dragItemId = id; e.dataTransfer.effectAllowed = 'copy'; e.dataTransfer.setData('text/plain', id); }
+async function handleDrop(e, lookId) {
+  e.preventDefault(); e.currentTarget.classList.remove('drag-over');
+  const itemId = dragItemId || parseInt(e.dataTransfer.getData('text/plain'));
+  if (!itemId) return;
+  const look = looks.find(l => l.id === lookId);
+  if (look && !look.itemIds.includes(itemId)) {
+    look.itemIds.push(itemId); renderLooks();
+    await api('POST', `/api/looks/${lookId}/items`, { itemId });
+    showSaved();
+  }
+  dragItemId = null;
+}
+
+// ===== EVENTS =====
+function setupEventListeners() {
+  document.getElementById('search').addEventListener('input', render);
+  document.getElementById('filter-type').addEventListener('change', () => { updateSubcategoryFilter(); render(); });
+  document.getElementById('filter-brand').addEventListener('change', render);
+  document.getElementById('filter-subcategory').addEventListener('change', render);
+  document.getElementById('sidebar-search')?.addEventListener('input', renderSidebar);
+  document.querySelectorAll('.view-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active'); currentView = btn.dataset.view; render();
+    });
+  });
+  document.getElementById('modal').addEventListener('click', closeModal);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+}
+
+// ===== INIT =====
+async function init() {
+  document.getElementById('items-container').innerHTML =
+    '<div class="empty-state"><div class="icon" style="animation:pulse 1.5s infinite">&#128090;</div><p>Loading your closet...</p></div>';
+  const [sheetOk] = await Promise.all([fetchSheetData(), loadImages(), loadLooks()]);
+  if (sheetOk) { populateFilters(); render(); }
+  setupEventListeners(); updateStats();
+}
+init();
+</script>
+</body>
+</html>
