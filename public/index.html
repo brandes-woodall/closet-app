@@ -703,7 +703,7 @@ function updateStats() {
 // ===== CLOSET RENDER =====
 function render() {
   const items = getFilteredItems(); const c = document.getElementById('items-container');
-  if (!items.length) { c.innerHTML = '<div class="empty-state"><div class="icon">&#128090;</div><p>No items match your filters</p></div>'; updateStats(); return; }
+  if (!items.length) { c.innerHTML = '<div class="empty-state"><div class="icon" style="font-family:Inter,sans-serif;font-size:24px;font-weight:600;letter-spacing:2px;color:var(--accent)">BW</div><p>No items match your filters</p></div>'; updateStats(); return; }
   if (currentView === 'grid') {
     c.innerHTML = '<div class="items-grid">' + items.map(renderGridCard).join('') + '</div>';
   } else {
@@ -848,7 +848,7 @@ function renderLooks() {
   const filterLabel = { 'available': 'all items available', 'available+ordered': 'all items available or ordered', 'available+ordered+repair': 'all items available, ordered, or in repair', 'everything': 'no buried items', 'all': '' };
   if (!filtered.length) {
     const msg = statusFilter !== 'all' ? `No looks where ${filterLabel[statusFilter]}` : 'No looks yet — create one to start styling!';
-    c.innerHTML = `<div class="empty-state"><div class="icon">&#128087;</div><p>${msg}</p></div>`; return;
+    c.innerHTML = `<div class="empty-state"><div class="icon" style="font-family:Inter,sans-serif;font-size:24px;font-weight:600;letter-spacing:2px;color:var(--accent)">BW</div><p>${msg}</p></div>`; return;
   }
   c.innerHTML = '<div class="looks-grid">' + filtered.map(look => {
     const items = look.itemIds.map(iid => {
