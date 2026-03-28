@@ -425,9 +425,12 @@
     <div class="lookbook-header">
       <h2>My Looks</h2>
       <div class="lookbook-filters">
-        <label style="font-size:12px;display:flex;align-items:center;gap:6px;color:var(--text-light);cursor:pointer;">
-          <input type="checkbox" id="lookbook-available-only" onchange="renderLooks()" /> Only show all-available looks
-        </label>
+        <select class="filter-select" id="lookbook-status-filter" onchange="renderLooks()">
+          <option value="available">Available Now</option>
+          <option value="available+ordered">Available + Ordered</option>
+          <option value="available+ordered+repair">Available + Ordered + Repair</option>
+          <option value="all" selected>Everything</option>
+        </select>
         <button class="new-look-btn" onclick="createNewLook()">+ New Look</button>
       </div>
     </div>
@@ -809,16 +812,25 @@ async function removeItemFromLook(lookId, itemId) {
 
 function renderLooks() {
   const c = document.getElementById('looks-container');
-  const availOnly = document.getElementById('lookbook-available-only')?.checked;
+  const statusFilter = document.getElementById('lookbook-status-filter')?.value || 'all';
+  const allowedStatuses = {
+    'available': ['Available'],
+    'available+ordered': ['Available', 'Ordered'],
+    'available+ordered+repair': ['Available', 'Ordered', 'Repair'],
+    'all': null
+  };
+  const allowed = allowedStatuses[statusFilter];
   let filtered = looks;
-  if (availOnly) {
+  if (allowed) {
     filtered = looks.filter(look => {
       if (!look.itemIds.length) return false;
-      return look.itemIds.every(iid => getStatus(iid) === 'Available');
+      return look.itemIds.every(iid => allowed.includes(getStatus(iid)));
     });
   }
+  const filterLabel = { 'available': 'all items available', 'available+ordered': 'all items available or ordered', 'available+ordered+repair': 'all items available, ordered, or in repair', 'all': '' };
   if (!filtered.length) {
-    c.innerHTML = '<div class="empty-state"><div class="icon">&#128087;</div><p>' + (availOnly ? 'No looks with all items available' : 'No looks yet — create one to start styling!') + '</p></div>'; return;
+    const msg = statusFilter !== 'all' ? `No looks where ${filterLabel[statusFilter]}` : 'No looks yet — create one to start styling!';
+    c.innerHTML = `<div class="empty-state"><div class="icon">&#128087;</div><p>${msg}</p></div>`; return;
   }
   c.innerHTML = '<div class="looks-grid">' + filtered.map(look => {
     const items = look.itemIds.map(iid => {
