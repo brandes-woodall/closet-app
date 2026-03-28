@@ -371,6 +371,8 @@
     display: none; align-items: center; justify-content: center;
   }
   .look-canvas-item:hover .look-canvas-remove { display: flex; }
+  .canvas-status { margin-top: 4px; opacity: 0; transition: opacity 0.2s; }
+  .look-canvas-item:hover .canvas-status { opacity: 1; }
 
   @media (max-width: 768px) {
     header { padding: 12px 16px; flex-direction: column; gap: 10px; }
@@ -837,7 +839,8 @@ function renderLooks() {
       const item = closetData.find(x => x.id === iid); if (!item) return '';
       const icon = typeIcons[item.type] || '&#128090;';
       const thumb = itemImages[iid] ? `<img src="${itemImages[iid]}" />` : `<div class="look-placeholder">${icon}</div>`;
-      return `<div class="look-canvas-item" onclick="openModal(${iid})">${thumb}<button class="look-canvas-remove" onclick="event.stopPropagation();removeItemFromLook(${look.id},${iid})">&times;</button><div class="canvas-brand">${item.brand}</div><div class="canvas-name">${item.item}</div></div>`;
+      const st = getStatus(iid);
+      return `<div class="look-canvas-item" onclick="openModal(${iid})">${thumb}<button class="look-canvas-remove" onclick="event.stopPropagation();removeItemFromLook(${look.id},${iid})">&times;</button><div class="canvas-brand">${item.brand}</div><div class="canvas-name">${item.item}</div><span class="canvas-status status-badge ${statusClass(st)}">${st}</span></div>`;
     }).join('');
     const hint = look.itemIds.length ? '' : '<div class="look-drop-hint">Drag items here from the sidebar</div>';
     return `<div class="look-card"><div class="look-card-header"><input type="text" value="${look.name}" placeholder="Name this look..." onchange="renameLook(${look.id},this.value)" /><div class="look-card-actions"><button class="look-action-btn delete" onclick="deleteLook(${look.id})">&times;</button></div></div><div class="look-canvas" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event,${look.id})">${items}${hint}</div></div>`;
