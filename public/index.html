@@ -302,7 +302,7 @@
     color: white; font-size: 12px; cursor: pointer;
     display: none; align-items: center; justify-content: center; z-index: 5;
   }
-  .item-image:hover .delete-image-btn { display: flex; }
+  .modal-image:hover .delete-image-btn { display: flex; }
   .hidden-input { display: none; }
 
   @keyframes pulse {
@@ -453,7 +453,8 @@
     <div class="modal-image" id="modal-image" onclick="uploadImageForItem(currentModalItemId)">
       <span class="placeholder-icon" id="modal-placeholder">&#128090;</span>
       <img id="modal-img" style="display:none" />
-      <div class="modal-image-hint">Click to upload image</div>
+      <button class="delete-image-btn" id="modal-delete-img" style="display:none" onclick="event.stopPropagation();deleteImage(currentModalItemId)">&times;</button>
+      <div class="modal-image-hint" id="modal-image-hint">Click to upload image</div>
     </div>
     <div class="modal-body">
       <div class="modal-brand" id="modal-brand"></div>
@@ -701,16 +702,16 @@ function render() {
 function renderGridCard(item) {
   const icon = typeIcons[item.type] || '&#128090;';
   const img = itemImages[item.id]
-    ? `<img src="${itemImages[item.id]}" /><button class="delete-image-btn" onclick="event.stopPropagation();deleteImage(${item.id})">&times;</button>`
+    ? `<img src="${itemImages[item.id]}" />`
     : `<span class="placeholder-icon">${icon}</span>`;
   const st = getStatus(item.id);
-  return `<div class="item-card" onclick="openModal(${item.id})"><div class="item-image">${img}<div class="image-upload-overlay" onclick="event.stopPropagation();uploadImageForItem(${item.id})"><span>${itemImages[item.id]?'Change':'Add image'}</span></div></div><div class="item-info"><div class="item-brand">${item.brand}</div><div class="item-name">${item.item}</div><div class="item-tags"><span class="tag colorway"><span class="color-dot" style="background:${getColorHex(item.colorway)}"></span>${item.colorway}</span><span class="tag">${item.size||'—'}</span><span class="status-badge ${statusClass(st)}">${st}</span></div></div></div>`;
+  return `<div class="item-card" onclick="openModal(${item.id})"><div class="item-image">${img}</div><div class="item-info"><div class="item-brand">${item.brand}</div><div class="item-name">${item.item}</div><div class="item-tags"><span class="tag colorway"><span class="color-dot" style="background:${getColorHex(item.colorway)}"></span>${item.colorway}</span><span class="tag">${item.size||'—'}</span><span class="status-badge ${statusClass(st)}">${st}</span></div></div></div>`;
 }
 
 function renderListRow(item) {
   const icon = typeIcons[item.type] || '&#128090;';
   const t = itemImages[item.id] ? `<img src="${itemImages[item.id]}" />` : `<span class="placeholder-icon">${icon}</span>`;
-  return `<div class="list-item" onclick="openModal(${item.id})"><div class="list-thumb" onclick="event.stopPropagation();uploadImageForItem(${item.id})">${t}</div><div class="list-brand">${item.brand}</div><div class="list-item-name">${item.item}</div><div><span class="tag colorway"><span class="color-dot" style="background:${getColorHex(item.colorway)}"></span>${item.colorway}</span></div><div>${item.size||'—'}</div><div>${item.type}</div><div>${item.subcategory&&item.subcategory!=='-'?item.subcategory:'—'}</div><div class="list-link">${item.link?`<a href="${item.link}" target="_blank" onclick="event.stopPropagation()">&#8599;</a>`:''}</div></div>`;
+  return `<div class="list-item" onclick="openModal(${item.id})"><div class="list-thumb">${t}</div><div class="list-brand">${item.brand}</div><div class="list-item-name">${item.item}</div><div><span class="tag colorway"><span class="color-dot" style="background:${getColorHex(item.colorway)}"></span>${item.colorway}</span></div><div>${item.size||'—'}</div><div>${item.type}</div><div>${item.subcategory&&item.subcategory!=='-'?item.subcategory:'—'}</div><div class="list-link">${item.link?`<a href="${item.link}" target="_blank" onclick="event.stopPropagation()">&#8599;</a>`:''}</div></div>`;
 }
 
 // ===== MODAL =====
@@ -727,8 +728,9 @@ function openModal(id) {
   const ml = document.getElementById('modal-link');
   if (item.link) { ml.href = item.link; ml.style.display = 'inline-block'; } else { ml.style.display = 'none'; }
   const mi = document.getElementById('modal-img'), mp = document.getElementById('modal-placeholder');
-  if (itemImages[id]) { mi.src = itemImages[id]; mi.style.display = 'block'; mp.style.display = 'none'; }
-  else { mi.style.display = 'none'; mp.style.display = 'block'; mp.innerHTML = typeIcons[item.type] || '&#128090;'; }
+  const mdi = document.getElementById('modal-delete-img'), mh = document.getElementById('modal-image-hint');
+  if (itemImages[id]) { mi.src = itemImages[id]; mi.style.display = 'block'; mp.style.display = 'none'; mdi.style.display = ''; mh.textContent = 'Click to change image'; }
+  else { mi.style.display = 'none'; mp.style.display = 'block'; mp.innerHTML = typeIcons[item.type] || '&#128090;'; mdi.style.display = 'none'; mh.textContent = 'Click to upload image'; }
 
   const itemLooks = looks.filter(l => l.itemIds.includes(id));
   const ls = document.getElementById('modal-looks'), lg = document.getElementById('modal-looks-grid');
