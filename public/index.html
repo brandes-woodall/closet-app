@@ -352,7 +352,7 @@
       <input class="search-box" type="text" id="search" placeholder="Search items, brands, colors..." />
       <select class="filter-select" id="filter-type"><option value="">All Types</option></select>
       <select class="filter-select" id="filter-brand"><option value="">All Brands</option></select>
-      <select class="filter-select" id="filter-subcategory"><option value="">All Subcategories</option></select>
+      <select class="filter-select" id="filter-subcategory" style="display:none"><option value="">All Subcategories</option></select>
       <div class="view-toggle">
         <button class="view-btn active" data-view="grid" title="Grid">&#9638;</button>
         <button class="view-btn" data-view="list" title="List">&#9776;</button>
@@ -539,12 +539,15 @@ function populateFilters() {
 
 function updateSubcategoryFilter() {
   const selType = document.getElementById('filter-type').value;
-  const items = selType ? closetData.filter(d => d.type === selType) : closetData;
+  const ss = document.getElementById('filter-subcategory');
+  if (!selType) { ss.style.display = 'none'; ss.value = ''; return; }
+  const items = closetData.filter(d => d.type === selType);
   const subs = [...new Set(items.map(d => d.subcategory).filter(s => s && s !== '-' && s !== ''))].sort();
-  const ss = document.getElementById('filter-subcategory'); const ps = ss.value;
+  const ps = ss.value;
   ss.innerHTML = '<option value="">All Subcategories</option>';
   subs.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; ss.appendChild(o); });
   ss.value = subs.includes(ps) ? ps : '';
+  ss.style.display = subs.length ? '' : 'none';
 }
 
 function getFilteredItems() {
