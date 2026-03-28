@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 
@@ -33,6 +34,57 @@ function saveStatuses() { writeJSON(STATUSES_FILE, statuses); }
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: false }));
+
+// ===== PASSWORD PROTECTION =====
+const SITE_PASSWORD = process.env.SITE_PASSWORD || 'closet2026';
+const sessions = new Set();
+
+function generateToken() { return crypto.randomBytes(32).toString('hex'); }
+
+function parseCookies(req) {
+  const cookies = {};
+  (req.headers.cookie || '').split(';').forEach(c => {
+    const [k, v] = c.trim().split('=');
+    if (k) cookies[k] = v;
+  });
+  return cookies;
+}
+
+const LOGIN_PAGE = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Brandes Woodall</title>
+<style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Inter',sans-serif;background:#f5f0eb;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.login{background:#fff;padding:48px;border-radius:14px;border:1px solid #e0d5cc;box-shadow:0 4px 12px rgba(44,36,32,0.04);text-align:center;width:320px}
+.logo{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:#8b6f5e;margin-bottom:32px}
+input{width:100%;padding:10px 14px;border:1px solid #e0d5cc;border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;outline:none;margin-bottom:14px}
+input:focus{border-color:#8b6f5e}
+button{width:100%;padding:10px;background:#8b6f5e;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif}
+button:hover{background:#725a4b}
+.err{color:#a04040;font-size:12px;margin-bottom:10px}
+</style></head><body><div class="login"><div class="logo">Brandes Woodall</div>
+<form method="POST" action="/login">ERRSLOT<input type="password" name="password" placeholder="Password" autofocus />
+<button type="submit">Enter</button></form></div></body></html>`;
+
+app.post('/login', (req, res) => {
+  if (req.body.password === SITE_PASSWORD) {
+    const token = generateToken();
+    sessions.add(token);
+    res.setHeader('Set-Cookie', `auth=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000`);
+    return res.redirect('/');
+  }
+  res.status(401).send(LOGIN_PAGE.replace('ERRSLOT', '<div class="err">Incorrect password</div>'));
+});
+
+app.use((req, res, next) => {
+  // Allow login page
+  if (req.path === '/login') return next();
+  const cookies = parseCookies(req);
+  if (cookies.auth && sessions.has(cookies.auth)) return next();
+  // Show login
+  res.send(LOGIN_PAGE.replace('ERRSLOT', ''));
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ===== IMAGE ENDPOINTS =====
