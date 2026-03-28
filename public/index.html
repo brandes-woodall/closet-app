@@ -319,6 +319,58 @@
   }
   .save-indicator.show { opacity: 1; }
 
+  /* Status badge & select */
+  .status-badge {
+    display: inline-block; font-size: 9px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; padding: 2px 8px; border-radius: 20px;
+  }
+  .status-available { background: #e0eed8; color: #3a6b28; }
+  .status-repair { background: #fce8cc; color: #a06020; }
+  .status-wishlist { background: #e8e0f0; color: #6b4a8b; }
+  .status-ordered { background: #d8e8f5; color: #2a5a8b; }
+  .status-select {
+    padding: 5px 10px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 11px; font-family: 'Inter', sans-serif; background: var(--card-bg);
+    color: var(--text); cursor: pointer; outline: none;
+  }
+  .modal-status { margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
+  .modal-status label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-light); }
+
+  /* Lookbook status filter */
+  .lookbook-filters { display: flex; gap: 10px; align-items: center; }
+
+  /* Lookbook canvas layout */
+  .look-canvas {
+    display: flex; flex-wrap: wrap; gap: 16px; padding: 20px;
+    min-height: 140px; align-items: flex-end; position: relative;
+  }
+  .look-canvas.drag-over { background: #f0ebe5; }
+  .look-canvas-item { text-align: center; cursor: pointer; position: relative; }
+  .look-canvas-item img {
+    width: 120px; height: 120px; object-fit: contain;
+    background: var(--tag-bg); border-radius: 8px; border: 1px solid var(--border); padding: 4px;
+  }
+  .look-canvas-item .look-placeholder {
+    width: 120px; height: 120px; border-radius: 8px; background: var(--tag-bg);
+    border: 1px solid var(--border); display: flex; align-items: center;
+    justify-content: center; font-size: 28px; opacity: 0.3;
+  }
+  .look-canvas-item .canvas-brand {
+    font-size: 9px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--accent); margin-top: 6px;
+  }
+  .look-canvas-item .canvas-name {
+    font-size: 11px; color: var(--text-light); line-height: 1.2; margin-top: 1px;
+    max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .look-canvas-remove {
+    position: absolute; top: -4px; right: -4px; width: 18px; height: 18px;
+    border-radius: 50%; border: none; background: rgba(160,64,64,0.85);
+    color: white; font-size: 10px; cursor: pointer;
+    display: none; align-items: center; justify-content: center;
+  }
+  .look-canvas-item:hover .look-canvas-remove { display: flex; }
+
   @media (max-width: 768px) {
     header { padding: 12px 16px; flex-direction: column; gap: 10px; }
     .container { padding: 16px; }
@@ -353,6 +405,13 @@
       <select class="filter-select" id="filter-type"><option value="">All Types</option></select>
       <select class="filter-select" id="filter-brand"><option value="">All Brands</option></select>
       <select class="filter-select" id="filter-subcategory" style="display:none"><option value="">All Subcategories</option></select>
+      <select class="filter-select" id="filter-status">
+        <option value="">All Statuses</option>
+        <option value="Available">Available</option>
+        <option value="Repair">Repair</option>
+        <option value="Wishlist">Wishlist</option>
+        <option value="Ordered">Ordered</option>
+      </select>
       <div class="view-toggle">
         <button class="view-btn active" data-view="grid" title="Grid">&#9638;</button>
         <button class="view-btn" data-view="list" title="List">&#9776;</button>
@@ -364,7 +423,12 @@
   <div class="page" id="page-lookbook">
     <div class="lookbook-header">
       <h2>My Looks</h2>
-      <button class="new-look-btn" onclick="createNewLook()">+ New Look</button>
+      <div class="lookbook-filters">
+        <label style="font-size:12px;display:flex;align-items:center;gap:6px;color:var(--text-light);cursor:pointer;">
+          <input type="checkbox" id="lookbook-available-only" onchange="renderLooks()" /> Only show all-available looks
+        </label>
+        <button class="new-look-btn" onclick="createNewLook()">+ New Look</button>
+      </div>
     </div>
     <div class="lookbook-layout">
       <div class="lookbook-main" id="looks-container"></div>
@@ -394,6 +458,15 @@
         <div class="detail-item"><label>Type</label><span id="modal-type"></span></div>
         <div class="detail-item"><label>Subcategory</label><span id="modal-subcategory"></span></div>
       </div>
+      <div class="modal-status">
+        <label>Status</label>
+        <select class="status-select" id="modal-status" onchange="setItemStatus(currentModalItemId, this.value)">
+          <option value="Available">Available</option>
+          <option value="Repair">Repair</option>
+          <option value="Wishlist">Wishlist</option>
+          <option value="Ordered">Ordered</option>
+        </select>
+      </div>
       <div class="modal-actions">
         <a class="modal-link" id="modal-link" href="#" target="_blank">View Product &rarr;</a>
       </div>
@@ -418,6 +491,7 @@ let currentView = 'grid';
 let currentPage = 'closet';
 let currentModalItemId = null;
 const itemImages = {};
+const itemStatuses = {};
 let looks = [];
 
 const typeIcons = {
@@ -500,6 +574,26 @@ async function loadImages() {
   Object.assign(itemImages, imgs);
 }
 
+async function loadStatuses() {
+  const sts = await api('GET', '/api/statuses');
+  Object.assign(itemStatuses, sts);
+}
+
+async function setItemStatus(itemId, status) {
+  itemStatuses[itemId] = status;
+  await api('POST', `/api/statuses/${itemId}`, { status });
+  showSaved();
+  render(); renderLooks();
+}
+
+function getStatus(itemId) {
+  return itemStatuses[itemId] || 'Available';
+}
+
+function statusClass(s) {
+  return 'status-' + (s || 'available').toLowerCase();
+}
+
 async function loadLooks() {
   looks = await api('GET', '/api/looks');
 }
@@ -555,10 +649,12 @@ function getFilteredItems() {
   const type = document.getElementById('filter-type').value;
   const brand = document.getElementById('filter-brand').value;
   const sub = document.getElementById('filter-subcategory').value;
+  const status = document.getElementById('filter-status').value;
   return closetData.filter(i => {
     if (type && i.type !== type) return false;
     if (brand && i.brand !== brand) return false;
     if (sub && i.subcategory !== sub) return false;
+    if (status && getStatus(i.id) !== status) return false;
     if (q && !`${i.brand} ${i.item} ${i.colorway} ${i.type} ${i.subcategory}`.toLowerCase().includes(q)) return false;
     return true;
   });
@@ -587,7 +683,8 @@ function renderGridCard(item) {
   const img = itemImages[item.id]
     ? `<img src="${itemImages[item.id]}" /><button class="delete-image-btn" onclick="event.stopPropagation();deleteImage(${item.id})">&times;</button>`
     : `<span class="placeholder-icon">${icon}</span>`;
-  return `<div class="item-card" onclick="openModal(${item.id})"><div class="item-image">${img}<div class="image-upload-overlay" onclick="event.stopPropagation();uploadImageForItem(${item.id})"><span>${itemImages[item.id]?'Change':'Add image'}</span></div></div><div class="item-info"><div class="item-brand">${item.brand}</div><div class="item-name">${item.item}</div><div class="item-tags"><span class="tag colorway"><span class="color-dot" style="background:${getColorHex(item.colorway)}"></span>${item.colorway}</span><span class="tag">${item.size||'—'}</span></div></div></div>`;
+  const st = getStatus(item.id);
+  return `<div class="item-card" onclick="openModal(${item.id})"><div class="item-image">${img}<div class="image-upload-overlay" onclick="event.stopPropagation();uploadImageForItem(${item.id})"><span>${itemImages[item.id]?'Change':'Add image'}</span></div></div><div class="item-info"><div class="item-brand">${item.brand}</div><div class="item-name">${item.item}</div><div class="item-tags"><span class="tag colorway"><span class="color-dot" style="background:${getColorHex(item.colorway)}"></span>${item.colorway}</span><span class="tag">${item.size||'—'}</span><span class="status-badge ${statusClass(st)}">${st}</span></div></div></div>`;
 }
 
 function renderListRow(item) {
@@ -606,6 +703,7 @@ function openModal(id) {
   document.getElementById('modal-size').textContent = item.size || '—';
   document.getElementById('modal-type').textContent = item.type;
   document.getElementById('modal-subcategory').textContent = (item.subcategory && item.subcategory !== '-') ? item.subcategory : '—';
+  document.getElementById('modal-status').value = getStatus(id);
   const ml = document.getElementById('modal-link');
   if (item.link) { ml.href = item.link; ml.style.display = 'inline-block'; } else { ml.style.display = 'none'; }
   const mi = document.getElementById('modal-img'), mp = document.getElementById('modal-placeholder');
@@ -696,18 +794,26 @@ async function removeItemFromLook(lookId, itemId) {
 
 function renderLooks() {
   const c = document.getElementById('looks-container');
-  if (!looks.length) {
-    c.innerHTML = '<div class="empty-state"><div class="icon">&#128087;</div><p>No looks yet — create one to start styling!</p></div>'; return;
+  const availOnly = document.getElementById('lookbook-available-only')?.checked;
+  let filtered = looks;
+  if (availOnly) {
+    filtered = looks.filter(look => {
+      if (!look.itemIds.length) return false;
+      return look.itemIds.every(iid => getStatus(iid) === 'Available');
+    });
   }
-  c.innerHTML = '<div class="looks-grid">' + looks.map(look => {
+  if (!filtered.length) {
+    c.innerHTML = '<div class="empty-state"><div class="icon">&#128087;</div><p>' + (availOnly ? 'No looks with all items available' : 'No looks yet — create one to start styling!') + '</p></div>'; return;
+  }
+  c.innerHTML = '<div class="looks-grid">' + filtered.map(look => {
     const items = look.itemIds.map(iid => {
       const item = closetData.find(x => x.id === iid); if (!item) return '';
       const icon = typeIcons[item.type] || '&#128090;';
       const thumb = itemImages[iid] ? `<img src="${itemImages[iid]}" />` : `<div class="look-placeholder">${icon}</div>`;
-      return `<div class="look-item-thumb" onclick="openModal(${iid})">${thumb}<button class="look-item-remove" onclick="event.stopPropagation();removeItemFromLook(${look.id},${iid})">&times;</button><div class="look-item-label">${item.brand}<br>${item.item}</div></div>`;
+      return `<div class="look-canvas-item" onclick="openModal(${iid})">${thumb}<button class="look-canvas-remove" onclick="event.stopPropagation();removeItemFromLook(${look.id},${iid})">&times;</button><div class="canvas-brand">${item.brand}</div><div class="canvas-name">${item.item}</div></div>`;
     }).join('');
     const hint = look.itemIds.length ? '' : '<div class="look-drop-hint">Drag items here from the sidebar</div>';
-    return `<div class="look-card"><div class="look-card-header"><input type="text" value="${look.name}" placeholder="Name this look..." onchange="renameLook(${look.id},this.value)" /><div class="look-card-actions"><button class="look-action-btn delete" onclick="deleteLook(${look.id})">&times;</button></div></div><div class="look-drop-zone" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event,${look.id})">${items}${hint}</div></div>`;
+    return `<div class="look-card"><div class="look-card-header"><input type="text" value="${look.name}" placeholder="Name this look..." onchange="renameLook(${look.id},this.value)" /><div class="look-card-actions"><button class="look-action-btn delete" onclick="deleteLook(${look.id})">&times;</button></div></div><div class="look-canvas" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event,${look.id})">${items}${hint}</div></div>`;
   }).join('') + '</div>';
 }
 
@@ -742,6 +848,7 @@ function setupEventListeners() {
   document.getElementById('filter-type').addEventListener('change', () => { updateSubcategoryFilter(); render(); });
   document.getElementById('filter-brand').addEventListener('change', render);
   document.getElementById('filter-subcategory').addEventListener('change', render);
+  document.getElementById('filter-status').addEventListener('change', render);
   document.getElementById('sidebar-search')?.addEventListener('input', renderSidebar);
   document.querySelectorAll('.view-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -757,7 +864,7 @@ function setupEventListeners() {
 async function init() {
   document.getElementById('items-container').innerHTML =
     '<div class="empty-state"><div class="icon" style="animation:pulse 1.5s infinite">&#128090;</div><p>Loading your closet...</p></div>';
-  const [sheetOk] = await Promise.all([fetchSheetData(), loadImages(), loadLooks()]);
+  const [sheetOk] = await Promise.all([fetchSheetData(), loadImages(), loadLooks(), loadStatuses()]);
   if (sheetOk) { populateFilters(); render(); }
   setupEventListeners(); updateStats();
 }

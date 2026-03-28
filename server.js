@@ -11,6 +11,7 @@ if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 const IMAGES_FILE = path.join(DATA_DIR, 'images.json');
 const LOOKS_FILE = path.join(DATA_DIR, 'looks.json');
+const STATUSES_FILE = path.join(DATA_DIR, 'statuses.json');
 
 // Simple JSON store helpers
 function readJSON(file, fallback) {
@@ -24,9 +25,11 @@ function writeJSON(file, data) {
 // Load data
 let images = readJSON(IMAGES_FILE, {});
 let looksData = readJSON(LOOKS_FILE, { nextId: 1, looks: [] });
+let statuses = readJSON(STATUSES_FILE, {});
 
 function saveImages() { writeJSON(IMAGES_FILE, images); }
 function saveLooks() { writeJSON(LOOKS_FILE, looksData); }
+function saveStatuses() { writeJSON(STATUSES_FILE, statuses); }
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
@@ -48,6 +51,19 @@ app.post('/api/images/:itemId', (req, res) => {
 app.delete('/api/images/:itemId', (req, res) => {
   delete images[req.params.itemId];
   saveImages();
+  res.json({ ok: true });
+});
+
+// ===== STATUS ENDPOINTS =====
+app.get('/api/statuses', (req, res) => {
+  res.json(statuses);
+});
+
+app.post('/api/statuses/:itemId', (req, res) => {
+  const { status } = req.body;
+  if (!status) return res.status(400).json({ error: 'No status' });
+  statuses[req.params.itemId] = status;
+  saveStatuses();
   res.json({ ok: true });
 });
 
