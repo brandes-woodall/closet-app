@@ -495,6 +495,17 @@ const itemImages = {};
 const itemStatuses = {};
 let looks = [];
 
+// Generate a stable numeric ID from item data so row order doesn't matter
+function stableId(brand, item, colorway, size) {
+  const str = `${brand}||${item}||${colorway}||${size}`.toLowerCase();
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash = hash & 0x7fffffff; // keep positive 31-bit int
+  }
+  return hash || 1;
+}
+
 const typeIcons = {
   'Shoes': '&#128094;', 'Bags': '&#128092;', 'Sweater': '&#129507;',
   'Top': '&#128085;', 'Tops': '&#128085;', 'Pants': '&#128086;',
@@ -553,8 +564,11 @@ async function fetchSheetData() {
     for (let i = hi + 1; i < rows.length; i++) {
       const r = rows[i]; const brand = (r[cols.brand]||'').trim();
       if (!brand) continue;
-      closetData.push({ id: closetData.length + 1, brand, item: (r[cols.item]||'').trim(),
-        colorway: (r[cols.colorway]||'').trim(), size: (r[cols.size]||'').trim(),
+      const itemName = (r[cols.item]||'').trim();
+      const colorway = (r[cols.colorway]||'').trim();
+      const size = (r[cols.size]||'').trim();
+      closetData.push({ id: stableId(brand, itemName, colorway, size), brand, item: itemName,
+        colorway, size,
         type: (r[cols.type]||'').trim(), subcategory: (r[cols.subcategory]||'').trim(),
         link: (r[cols.link]||'').trim() });
     }
@@ -862,11 +876,44 @@ function setupEventListeners() {
 }
 
 // ===== INIT =====
+async function migrateOldIds() {
+  // Check if any stored image/status keys are old sequential IDs (small numbers)
+  const oldKeys = Object.keys(itemImages).filter(k => parseInt(k) > 0 && parseInt(k) <= 200);
+  if (!oldKeys.length) return; // nothing to migrate
+  // Build a map from old sequential IDs to new stable IDs
+  // We need to reconstruct the old ordering - items are already loaded in sheet order
+  const idMap = {};
+  closetData.forEach((item, idx) => {
+    const oldId = String(idx + 1);
+    const newId = String(item.id);
+    if (oldId !== newId) idMap[oldId] = newId;
+  });
+  if (!Object.keys(idMap).length) return;
+  // Remap local data
+  for (const [oldK, newK] of Object.entries(idMap)) {
+    if (itemImages[oldK]) { itemImages[newK] = itemImages[oldK]; delete itemImages[oldK]; }
+    if (itemStatuses[oldK]) { itemStatuses[newK] = itemStatuses[oldK]; delete itemStatuses[oldK]; }
+  }
+  // Remap looks
+  for (const look of looks) {
+    look.itemIds = look.itemIds.map(id => {
+      const mapped = idMap[String(id)];
+      return mapped ? parseInt(mapped) : id;
+    });
+  }
+  // Persist migration to server
+  await api('POST', '/api/migrate-ids', { idMap });
+  console.log('Migrated IDs:', idMap);
+}
+
 async function init() {
   document.getElementById('items-container').innerHTML =
     '<div class="empty-state"><div class="icon" style="animation:pulse 1.5s infinite">&#128090;</div><p>Loading your closet...</p></div>';
   const [sheetOk] = await Promise.all([fetchSheetData(), loadImages(), loadLooks(), loadStatuses()]);
-  if (sheetOk) { populateFilters(); render(); }
+  if (sheetOk) {
+    await migrateOldIds();
+    populateFilters(); render();
+  }
   setupEventListeners(); updateStats();
 }
 init();

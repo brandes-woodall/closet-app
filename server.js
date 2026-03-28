@@ -54,6 +54,42 @@ app.delete('/api/images/:itemId', (req, res) => {
   res.json({ ok: true });
 });
 
+// ===== MIGRATION ENDPOINT =====
+// Remaps old sequential IDs to new stable IDs
+app.post('/api/migrate-ids', (req, res) => {
+  const { idMap } = req.body; // { oldId: newId, ... }
+  if (!idMap || typeof idMap !== 'object') return res.status(400).json({ error: 'No idMap' });
+
+  // Migrate images
+  const newImages = {};
+  for (const [key, val] of Object.entries(images)) {
+    const newKey = idMap[key] || key;
+    newImages[newKey] = val;
+  }
+  images = newImages;
+  saveImages();
+
+  // Migrate statuses
+  const newStatuses = {};
+  for (const [key, val] of Object.entries(statuses)) {
+    const newKey = idMap[key] || key;
+    newStatuses[newKey] = val;
+  }
+  statuses = newStatuses;
+  saveStatuses();
+
+  // Migrate looks
+  for (const look of looksData.looks) {
+    look.itemIds = look.itemIds.map(id => {
+      const mapped = idMap[String(id)];
+      return mapped ? parseInt(mapped) : id;
+    });
+  }
+  saveLooks();
+
+  res.json({ ok: true, migrated: Object.keys(idMap).length });
+});
+
 // ===== STATUS ENDPOINTS =====
 app.get('/api/statuses', (req, res) => {
   res.json(statuses);
