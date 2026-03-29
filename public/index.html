@@ -841,7 +841,7 @@ function renderLooks() {
   let filtered = looks;
   if (allowed) {
     filtered = looks.filter(look => {
-      if (!look.itemIds.length) return false;
+      if (!look.itemIds.length) return true;
       return look.itemIds.every(iid => allowed.includes(getStatus(iid)));
     });
   }
