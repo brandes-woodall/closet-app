@@ -375,73 +375,124 @@
   .canvas-status { margin-top: 4px; opacity: 0; transition: opacity 0.2s; }
   .look-canvas-item:hover .canvas-status { opacity: 1; }
 
-  /* Wear tracking */
-  .look-wear-section {
-    border-top: 1px solid var(--border); padding: 12px 16px;
+  /* Wear dots on look cards */
+  .look-wear-dots {
+    border-top: 1px solid var(--border); padding: 10px 16px;
+    display: flex; align-items: center; gap: 5px; min-height: 34px;
+    cursor: pointer;
   }
-  .look-wear-header {
-    display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+  .look-wear-dots:hover { background: var(--hover); }
+  .wear-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--accent); opacity: 0.6;
   }
-  .look-wear-summary {
-    font-size: 12px; color: var(--text-light); display: flex; align-items: center; gap: 8px;
+  .look-wear-dots .no-wears {
+    font-size: 11px; color: var(--text-light); opacity: 0.5;
   }
-  .wear-count-badge {
-    display: inline-flex; align-items: center; gap: 4px;
-    font-size: 11px; font-weight: 600; color: var(--accent);
+
+  /* Look detail modal */
+  .look-modal-overlay {
+    position: fixed; inset: 0; background: rgba(44,36,32,0.35);
+    display: none; align-items: center; justify-content: center; z-index: 1001;
+    backdrop-filter: blur(2px);
   }
-  .wear-last-date { font-size: 11px; color: var(--text-light); }
-  .look-wear-toggle {
-    font-size: 10px; font-weight: 500; color: var(--accent); background: none;
-    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px;
-    cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s;
+  .look-modal-overlay.active { display: flex; }
+  .look-modal {
+    background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border);
+    box-shadow: 0 20px 60px rgba(44,36,32,0.15); width: 580px; max-width: 92vw;
+    max-height: 88vh; overflow-y: auto; position: relative;
   }
-  .look-wear-toggle:hover { background: var(--hover); border-color: var(--accent); }
-  .look-wear-body { margin-top: 12px; display: none; }
-  .look-wear-body.open { display: block; }
-  .wear-add-form {
-    display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap;
+  .look-modal-close {
+    position: absolute; top: 14px; right: 14px; width: 30px; height: 30px;
+    border-radius: 50%; border: 1px solid var(--border); background: var(--card-bg);
+    cursor: pointer; font-size: 16px; display: flex; align-items: center;
+    justify-content: center; color: var(--text-light); z-index: 2; transition: all 0.2s;
   }
-  .wear-add-form input[type="date"] {
-    padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px;
+  .look-modal-close:hover { background: var(--hover); color: var(--text); }
+  .look-modal-header {
+    padding: 24px 24px 0; display: flex; align-items: center; gap: 12px;
+  }
+  .look-modal-header input {
+    font-family: 'EB Garamond', serif; font-size: 22px; font-weight: 500;
+    border: none; outline: none; background: transparent; color: var(--text); width: 100%;
+  }
+  .look-modal-header input::placeholder { color: var(--accent-light); }
+  .look-modal-items {
+    padding: 20px 24px; display: flex; flex-wrap: wrap; gap: 12px;
+    background: white; margin: 16px 24px; border-radius: 12px;
+    border: 1px solid var(--border); min-height: 80px;
+  }
+  .look-modal-items .look-canvas-item { text-align: center; cursor: pointer; position: relative; }
+  .look-modal-items .look-canvas-item img {
+    width: 90px; height: 90px; object-fit: contain; border-radius: 6px;
+  }
+  .look-modal-items .look-canvas-item .look-placeholder {
+    width: 90px; height: 90px; border-radius: 6px; background: var(--tag-bg);
+    display: flex; align-items: center; justify-content: center; font-size: 28px; opacity: 0.3;
+  }
+  .look-modal-items .canvas-brand {
+    font-size: 8px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--accent); margin-top: 6px;
+  }
+  .look-modal-items .canvas-name {
+    font-size: 10px; color: var(--text); max-width: 90px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* Wear log inside look modal */
+  .look-modal-wear {
+    padding: 0 24px 24px;
+  }
+  .wear-section-title {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--text-light); margin-bottom: 12px;
+  }
+  .wear-add-row {
+    display: flex; gap: 8px; align-items: center; margin-bottom: 14px;
+  }
+  .wear-add-row input[type="date"] {
+    padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px;
     font-size: 12px; font-family: 'Inter', sans-serif; outline: none; color: var(--text);
+    background: white;
   }
-  .wear-add-form input[type="date"]:focus { border-color: var(--accent); }
+  .wear-add-row input[type="date"]:focus { border-color: var(--accent); }
   .wear-add-btn {
-    padding: 6px 14px; background: var(--accent); color: white; border: none;
+    padding: 7px 16px; background: var(--accent); color: white; border: none;
     border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500;
-    font-family: 'Inter', sans-serif; transition: background 0.2s;
+    font-family: 'Inter', sans-serif; transition: background 0.2s; white-space: nowrap;
   }
   .wear-add-btn:hover { background: #725a4b; }
-  .wear-photo-btn {
-    padding: 6px 10px; background: none; color: var(--accent); border: 1px solid var(--border);
-    border-radius: 6px; cursor: pointer; font-size: 11px; font-family: 'Inter', sans-serif;
-    transition: all 0.2s;
-  }
-  .wear-photo-btn:hover { background: var(--hover); border-color: var(--accent); }
-  .wear-entries { display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto; }
+  .wear-entries { display: flex; flex-direction: column; gap: 8px; }
   .wear-entry {
-    display: flex; align-items: center; gap: 10px; padding: 8px 10px;
-    background: var(--bg); border-radius: 8px; border: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    background: var(--bg); border-radius: 10px; border: 1px solid var(--border);
+    transition: all 0.15s;
   }
+  .wear-entry:hover { border-color: var(--accent-light); }
   .wear-entry-photo {
-    width: 40px; height: 40px; border-radius: 6px; object-fit: cover; cursor: pointer;
-    border: 1px solid var(--border);
+    width: 48px; height: 48px; border-radius: 8px; object-fit: cover;
+    border: 1px solid var(--border); cursor: pointer;
   }
   .wear-entry-photo-placeholder {
-    width: 40px; height: 40px; border-radius: 6px; background: var(--tag-bg);
-    border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
-    font-size: 14px; color: var(--text-light); opacity: 0.4; cursor: pointer;
+    width: 48px; height: 48px; border-radius: 8px; background: var(--tag-bg);
+    border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: var(--text-light); opacity: 0.35; cursor: pointer;
+    transition: all 0.2s;
   }
-  .wear-entry-date { font-size: 12px; font-weight: 500; color: var(--text); flex: 1; }
-  .wear-entry-note { font-size: 11px; color: var(--text-light); }
+  .wear-entry-photo-placeholder:hover { opacity: 0.6; border-color: var(--accent); }
+  .wear-entry-info { flex: 1; }
+  .wear-entry-date { font-size: 13px; font-weight: 500; color: var(--text); }
   .wear-entry-delete {
-    width: 22px; height: 22px; border-radius: 5px; border: 1px solid transparent;
-    background: none; cursor: pointer; font-size: 11px; color: var(--text-light);
+    width: 24px; height: 24px; border-radius: 6px; border: 1px solid transparent;
+    background: none; cursor: pointer; font-size: 12px; color: var(--text-light);
     display: flex; align-items: center; justify-content: center; transition: all 0.2s;
     opacity: 0;
   }
   .wear-entry:hover .wear-entry-delete { opacity: 1; }
   .wear-entry-delete:hover { background: #f5e0e0; color: #a04040; border-color: #dca0a0; }
+  .wear-empty {
+    font-size: 12px; color: var(--text-light); text-align: center; padding: 16px;
+    opacity: 0.6;
+  }
 
   @media (max-width: 768px) {
     header { padding: 12px 16px; flex-direction: column; gap: 10px; }
@@ -554,6 +605,24 @@
         <h4>Appears in looks</h4>
         <div class="modal-looks-grid" id="modal-looks-grid"></div>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="look-modal-overlay" id="look-modal" onclick="closeLookModal()">
+  <div class="look-modal" onclick="event.stopPropagation()">
+    <button class="look-modal-close" onclick="closeLookModal()">&times;</button>
+    <div class="look-modal-header">
+      <input type="text" id="look-modal-name" placeholder="Name this look..." />
+    </div>
+    <div class="look-modal-items" id="look-modal-items"></div>
+    <div class="look-modal-wear">
+      <div class="wear-section-title">Wear Log</div>
+      <div class="wear-add-row">
+        <input type="date" id="look-modal-wear-date" />
+        <button class="wear-add-btn" onclick="addWearFromModal()">+ Log Wear</button>
+      </div>
+      <div class="wear-entries" id="look-modal-wear-entries"></div>
     </div>
   </div>
 </div>
@@ -702,12 +771,66 @@ function getWearEntries(lookId) {
   return data ? (data.entries || []) : [];
 }
 
-async function addWear(lookId) {
-  const dateInput = document.getElementById(`wear-date-${lookId}`);
-  const date = dateInput?.value || new Date().toISOString().split('T')[0];
-  const entry = await api('POST', `/api/looks/${lookId}/wears`, { date });
-  if (!allWears[lookId]) allWears[lookId] = { nextId: 1, entries: [] };
-  allWears[lookId].entries.unshift(entry);
+function formatWearDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+let currentLookModalId = null;
+
+function openLookModal(lookId) {
+  currentLookModalId = lookId;
+  const look = looks.find(l => l.id === lookId);
+  if (!look) return;
+  document.getElementById('look-modal').classList.add('active');
+  const nameInput = document.getElementById('look-modal-name');
+  nameInput.value = look.name;
+  nameInput.onchange = () => { renameLook(lookId, nameInput.value); };
+  // Set date to today
+  document.getElementById('look-modal-wear-date').value = new Date().toISOString().split('T')[0];
+  // Render items
+  const itemsEl = document.getElementById('look-modal-items');
+  itemsEl.innerHTML = look.itemIds.map(iid => {
+    const item = closetData.find(x => x.id === iid); if (!item) return '';
+    const icon = typeIcons[item.type] || '&#128090;';
+    const thumb = itemImages[iid] ? `<img src="${itemImages[iid]}" />` : `<div class="look-placeholder">${icon}</div>`;
+    return `<div class="look-canvas-item" onclick="openModal(${iid})">${thumb}<div class="canvas-brand">${item.brand}</div><div class="canvas-name">${item.item}</div></div>`;
+  }).join('') || '<div style="font-size:12px;color:var(--text-light);padding:8px;">No items yet</div>';
+  renderWearEntries();
+  document.addEventListener('keydown', lookModalEsc);
+}
+
+function closeLookModal() {
+  document.getElementById('look-modal').classList.remove('active');
+  currentLookModalId = null;
+  document.removeEventListener('keydown', lookModalEsc);
+}
+
+function lookModalEsc(e) { if (e.key === 'Escape') closeLookModal(); }
+
+function renderWearEntries() {
+  if (!currentLookModalId) return;
+  const entries = getWearEntries(currentLookModalId);
+  const el = document.getElementById('look-modal-wear-entries');
+  if (!entries.length) {
+    el.innerHTML = '<div class="wear-empty">No wears logged yet</div>';
+    return;
+  }
+  el.innerHTML = entries.map(w => {
+    const photo = w.imageData
+      ? `<img class="wear-entry-photo" src="${w.imageData}" onclick="uploadWearPhoto(${currentLookModalId},${w.id})" title="Click to change photo" />`
+      : `<div class="wear-entry-photo-placeholder" onclick="uploadWearPhoto(${currentLookModalId},${w.id})" title="Add photo">+</div>`;
+    return `<div class="wear-entry">${photo}<div class="wear-entry-info"><div class="wear-entry-date">${formatWearDate(w.date)}</div></div><button class="wear-entry-delete" onclick="deleteWear(${currentLookModalId},${w.id})" title="Remove">&times;</button></div>`;
+  }).join('');
+}
+
+async function addWearFromModal() {
+  if (!currentLookModalId) return;
+  const date = document.getElementById('look-modal-wear-date').value || new Date().toISOString().split('T')[0];
+  const entry = await api('POST', `/api/looks/${currentLookModalId}/wears`, { date });
+  if (!allWears[currentLookModalId]) allWears[currentLookModalId] = { nextId: 1, entries: [] };
+  allWears[currentLookModalId].entries.unshift(entry);
+  renderWearEntries();
   renderLooks();
   showSaved();
 }
@@ -717,42 +840,30 @@ async function deleteWear(lookId, wearId) {
   if (allWears[lookId]) {
     allWears[lookId].entries = allWears[lookId].entries.filter(e => e.id !== wearId);
   }
+  renderWearEntries();
   renderLooks();
   showSaved();
 }
 
-async function uploadWearPhoto(lookId, wearId) {
-  return new Promise(resolve => {
-    const input = document.createElement('input');
-    input.type = 'file'; input.accept = 'image/*';
-    input.onchange = async () => {
-      const file = input.files[0]; if (!file) return resolve();
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const imageData = reader.result;
-        if (allWears[lookId]) {
-          const entry = allWears[lookId].entries.find(e => e.id === wearId);
-          if (entry) entry.imageData = imageData;
-        }
-        await api('PATCH', `/api/looks/${lookId}/wears/${wearId}`, { imageData });
-        renderLooks();
-        showSaved();
-        resolve();
-      };
-      reader.readAsDataURL(file);
+function uploadWearPhoto(lookId, wearId) {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*';
+  input.onchange = async () => {
+    const file = input.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const imageData = reader.result;
+      if (allWears[lookId]) {
+        const entry = allWears[lookId].entries.find(e => e.id === wearId);
+        if (entry) entry.imageData = imageData;
+      }
+      await api('PATCH', `/api/looks/${lookId}/wears/${wearId}`, { imageData });
+      renderWearEntries();
+      showSaved();
     };
-    input.click();
-  });
-}
-
-function toggleWearLog(lookId) {
-  const body = document.getElementById(`wear-body-${lookId}`);
-  if (body) body.classList.toggle('open');
-}
-
-function formatWearDate(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    reader.readAsDataURL(file);
+  };
+  input.click();
 }
 
 async function refreshData() {
@@ -991,17 +1102,10 @@ function renderLooks() {
     }).join('');
     const hint = look.itemIds.length ? '' : '<div class="look-drop-hint">Drag items here from the sidebar</div>';
     const wearEntries = getWearEntries(look.id);
-    const wearCount = wearEntries.length;
-    const lastWorn = wearCount ? formatWearDate(wearEntries[0].date) : null;
-    const today = new Date().toISOString().split('T')[0];
-    const wearEntriesHtml = wearEntries.map(w => {
-      const photo = w.imageData
-        ? `<img class="wear-entry-photo" src="${w.imageData}" onclick="event.stopPropagation()" />`
-        : `<div class="wear-entry-photo-placeholder" onclick="event.stopPropagation();uploadWearPhoto(${look.id},${w.id})">&#128247;</div>`;
-      return `<div class="wear-entry">${photo}<div class="wear-entry-date">${formatWearDate(w.date)}</div><button class="wear-entry-delete" onclick="deleteWear(${look.id},${w.id})" title="Remove">&times;</button></div>`;
-    }).join('');
-    const wearSection = `<div class="look-wear-section"><div class="look-wear-header" onclick="toggleWearLog(${look.id})"><div class="look-wear-summary"><span class="wear-count-badge">&#128197; Worn ${wearCount} time${wearCount !== 1 ? 's' : ''}</span>${lastWorn ? `<span class="wear-last-date">Last: ${lastWorn}</span>` : ''}</div><button class="look-wear-toggle">${wearCount ? 'Details' : 'Log a Wear'}</button></div><div class="look-wear-body" id="wear-body-${look.id}"><div class="wear-add-form"><input type="date" id="wear-date-${look.id}" value="${today}" /><button class="wear-add-btn" onclick="event.stopPropagation();addWear(${look.id})">+ Log Wear</button></div>${wearEntriesHtml ? `<div class="wear-entries">${wearEntriesHtml}</div>` : '<div style="font-size:12px;color:var(--text-light)">No wears logged yet</div>'}</div></div>`;
-    return `<div class="look-card"><div class="look-card-header"><input type="text" value="${look.name}" placeholder="Name this look..." onchange="renameLook(${look.id},this.value)" /><div class="look-card-actions"><button class="look-action-btn delete" onclick="deleteLook(${look.id})">&times;</button></div></div><div class="look-canvas" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event,${look.id})">${items}${hint}</div>${wearSection}</div>`;
+    const dots = wearEntries.length
+      ? wearEntries.map(() => '<span class="wear-dot"></span>').join('')
+      : '<span class="no-wears"></span>';
+    return `<div class="look-card"><div class="look-card-header"><input type="text" value="${look.name}" placeholder="Name this look..." onchange="renameLook(${look.id},this.value)" onclick="event.stopPropagation()" /><div class="look-card-actions"><button class="look-action-btn delete" onclick="event.stopPropagation();deleteLook(${look.id})">&times;</button></div></div><div class="look-canvas" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event,${look.id})">${items}${hint}</div><div class="look-wear-dots" onclick="openLookModal(${look.id})">${dots}</div></div>`;
   }).join('') + '</div>';
 }
 
