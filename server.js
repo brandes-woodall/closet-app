@@ -13,6 +13,7 @@ if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 const IMAGES_FILE = path.join(DATA_DIR, 'images.json');
 const LOOKS_FILE = path.join(DATA_DIR, 'looks.json');
 const STATUSES_FILE = path.join(DATA_DIR, 'statuses.json');
+const WEARS_FILE = path.join(DATA_DIR, 'wears.json');
 
 // Simple JSON store helpers
 function readJSON(file, fallback) {
@@ -27,10 +28,12 @@ function writeJSON(file, data) {
 let images = readJSON(IMAGES_FILE, {});
 let looksData = readJSON(LOOKS_FILE, { nextId: 1, looks: [] });
 let statuses = readJSON(STATUSES_FILE, {});
+let wears = readJSON(WEARS_FILE, {}); // { lookId: { nextId: 1, entries: [{ id, date, note, imageData }] } }
 
 function saveImages() { writeJSON(IMAGES_FILE, images); }
 function saveLooks() { writeJSON(LOOKS_FILE, looksData); }
 function saveStatuses() { writeJSON(STATUSES_FILE, statuses); }
+function saveWears() { writeJSON(WEARS_FILE, wears); }
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
@@ -194,6 +197,54 @@ app.delete('/api/looks/:id/items/:itemId', (req, res) => {
   if (look) {
     look.itemIds = look.itemIds.filter(id => id !== parseInt(req.params.itemId));
     saveLooks();
+  }
+  res.json({ ok: true });
+});
+
+// ===== WEAR TRACKING ENDPOINTS =====
+app.get('/api/wears', (req, res) => {
+  res.json(wears);
+});
+
+app.get('/api/looks/:id/wears', (req, res) => {
+  const lookId = req.params.id;
+  const lookWears = wears[lookId] || { nextId: 1, entries: [] };
+  res.json(lookWears.entries);
+});
+
+app.post('/api/looks/:id/wears', (req, res) => {
+  const lookId = req.params.id;
+  if (!wears[lookId]) wears[lookId] = { nextId: 1, entries: [] };
+  const entry = {
+    id: wears[lookId].nextId++,
+    date: req.body.date || new Date().toISOString().split('T')[0],
+    note: req.body.note || '',
+    imageData: req.body.imageData || null
+  };
+  wears[lookId].entries.unshift(entry);
+  saveWears();
+  res.json(entry);
+});
+
+app.patch('/api/looks/:id/wears/:wearId', (req, res) => {
+  const lookId = req.params.id;
+  if (wears[lookId]) {
+    const entry = wears[lookId].entries.find(e => e.id === parseInt(req.params.wearId));
+    if (entry) {
+      if (req.body.imageData !== undefined) entry.imageData = req.body.imageData;
+      if (req.body.note !== undefined) entry.note = req.body.note;
+      if (req.body.date !== undefined) entry.date = req.body.date;
+      saveWears();
+    }
+  }
+  res.json({ ok: true });
+});
+
+app.delete('/api/looks/:id/wears/:wearId', (req, res) => {
+  const lookId = req.params.id;
+  if (wears[lookId]) {
+    wears[lookId].entries = wears[lookId].entries.filter(e => e.id !== parseInt(req.params.wearId));
+    saveWears();
   }
   res.json({ ok: true });
 });
